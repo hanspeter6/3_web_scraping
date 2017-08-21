@@ -1,0 +1,70 @@
+---
+title: "Tutorial on Web Scraping"
+author: "Hans-Peter Bakker (BKKHAN001)"
+date: "8/18/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message = FALSE, echo = FALSE}
+# loading packages
+library(rvest)
+library(tidyverse)
+library(stringr)
+```
+
+#### Web Scraping Project
+
+In this project basic run of paper (ROP) rates will be "scraped" from the Cape Town newspaper *Die Burger*'s website.
+
+Using *SelectorGadget* resulted in identifying and therefore extracting information that was not being targeted. Since they were in drop-down pages, it was not possible to deselect them. Furthermore, although the target appeared to be a table, the *html_table* function did not work in this example. Accordingly the file was treated as text, creating some additional challenges.
+
+From the scraped text information, the target lines needed to be identified and extracted, placed into a data frame and formatted correctly for further processing.
+
+The final outcome succeeds in showing what was intended.
+
+The URL of the targeted web page is: http://www.ads24.co.za/misc/publication?brand=die-burger&key=5E33675F402BBEECE647DF3FF47C2C51#key
+
+<!-- ![ROP Information for *Die Burger*](/Users/HansPeter/Dropbox/Statistics/UCTDataScience/Industry/lessons/3_web_scraping/burger_site.png) -->
+
+```{r}
+# identify target website & create R-object of the html file & look at it
+site <- "http://www.ads24.co.za/misc/publication?brand=die-burger&key=5E33675F402BBEECE647DF3FF47C2C51#rates"
+
+# reading in the html file
+burger_html <- read_html(site)
+burger_html
+```
+
+```{r}
+# getting elements, trimming & look at it
+burger_elements <- html_nodes(burger_html, css = "td , td, th")
+
+burger_text <- html_text(burger_elements, trim = TRUE) 
+as.tibble(burger_text[20:30]) # sample
+```
+
+```{r}
+# cleaning up the dataframe
+# 
+# get rid of first lines & define variable names
+rops <- burger_text[3:47]
+names <- rops[1:5]
+
+# turn content into a data frame and name the columns
+df <- as.data.frame(matrix(rops[6:45], ncol = 5, nrow = 8, byrow = TRUE))
+names(df) <- names
+
+# turn the numeric vars into such
+library(stringr)
+df$BW <- as.numeric(str_extract(as.character(df$BW), "[^R]\\d+"))
+df$FC <- as.numeric(str_extract(as.character(df$FC), "[^R]\\d+"))
+
+# look at it
+df
+```
+
+End
